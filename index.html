@@ -461,7 +461,8 @@ function render(){
   const dc=getDC(state.diff);
   const curWord=getCurrentWord(p,state.active,state.dir);
   const curCells=curWord?getWordCells(curWord):[];
-  const cellSz=Math.max(28,Math.min(50,Math.floor(580/Math.max(p.rows,p.cols))));
+  const gridBase=state.diff==='nightmare'?420:580;
+  const cellSz=Math.max(28,Math.min(50,Math.floor(gridBase/Math.max(p.rows,p.cols))));
   const numFs=Math.max(7,cellSz*0.2);
   const letFs=Math.max(14,cellSz*0.44);
 
@@ -525,8 +526,8 @@ function render(){
     '<div class="cw-hdr"><div class="cw-title">Crossword Puzzle - 英语填词游戏</div>'+
     '<div class="cw-diffs">'+diffsHTML+'</div>'+
     '<div id="cw-timer" class="cw-timer">'+formatTime(state.timer)+'</div></div>'+
-    '<div class="cw-body" style="'+(state.diff==='nightmare'?'gap:10px;':'')+'">'+
-      '<div class="cw-gsec" style="'+(state.diff==='nightmare'?'padding:12px;margin-left:-10px;':'')+'">'+
+    '<div class="cw-body" style="'+(state.diff==='nightmare'?'gap:10px;flex-wrap:nowrap;':'')+'">'+
+      '<div class="cw-gsec" style="'+(state.diff==='nightmare'?'padding:12px;flex-shrink:0;':'')+'">'+
         '<div id="cw-grid" class="cw-grid" tabindex="0" style="display:inline-grid;grid-template-columns:repeat('+p.cols+','+cellSz+'px);grid-template-rows:repeat('+p.rows+','+cellSz+'px)">'+gridHTML+'</div>'+
         '<div class="cw-bar">'+
           '<button class="cw-btn cw-bc" onclick="doCheck()"'+(state.won?" disabled":"")+'>Check</button>'+
@@ -536,7 +537,7 @@ function render(){
         '</div>'+
         '<div class="cw-info"><span>Words: '+p.words.length+'</span><span>Hints: '+state.hints+'/'+dc.maxHints+'</span><span>Wrong: '+state.wrong+'</span><span>'+(state.dir==="across"?"Across ↓":"Down →")+'</span></div>'+
       '</div>'+
-      '<div class="cw-csec" style="'+(state.diff==='nightmare'?'min-width:420px;flex:1.6;':'')+'">'+
+      '<div class="cw-csec" style="'+(state.diff==='nightmare'?'min-width:0;flex:1;':'')+'">'+
         '<div class="cw-ch">Clues - 题目</div>'+
         '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:1;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;'+(state.diff==='nightmare'?'':'column-span:all')+'">ACROSS - 横向</div>'+acrossHTML+'</div>'+
         '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:1;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;'+(state.diff==='nightmare'?'':'column-span:all')+'">DOWN - 纵向</div>'+downHTML+'</div>'+
