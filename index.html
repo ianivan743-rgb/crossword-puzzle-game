@@ -41,7 +41,7 @@ body{background:#e8f4fd;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Se
 .cw-cl{margin-bottom:14px;column-count:2;column-gap:16px}
 .cw-cg{margin-bottom:6px;break-inside:avoid}
 .cw-cgt{font-size:10px;font-weight:700;color:#7ba7cc;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
-.cw-ct{font-size:13px;color:#334155;line-height:1.5}
+.cw-ct{font-size:13px;color:#334155;line-height:1.5;white-space:nowrap}
 .cw-cl-item.act .cw-ct{color:#2563eb;font-weight:600}
 .cw-wlen{color:#94a3b8;font-size:11px}
 .cw-win{position:fixed;inset:0;background:rgba(30,64,175,.4);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fi .3s}
@@ -539,8 +539,8 @@ function render(){
       '</div>'+
       '<div class="cw-csec" style="'+(state.diff==='nightmare'?'min-width:0;flex:1;':'')+'">'+
         '<div class="cw-ch">Clues - 题目</div>'+
-        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:1;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;'+(state.diff==='nightmare'?'':'column-span:all')+'">ACROSS - 横向</div>'+acrossHTML+'</div>'+
-        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:1;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;'+(state.diff==='nightmare'?'':'column-span:all')+'">DOWN - 纵向</div>'+downHTML+'</div>'+
+        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:2;column-gap:16px;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;column-span:all">ACROSS - 横向</div>'+acrossHTML+'</div>'+
+        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:2;column-gap:16px;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;column-span:all">DOWN - 纵向</div>'+downHTML+'</div>'+
       '</div>'+
     '</div>'+winHTML+'</div>';
 
