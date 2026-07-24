@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crossword Puzzle - 英语填词游戏</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e8f4fd;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+.cw-wrap{max-width:1100px;margin:0 auto;padding:16px}
+.cw-hdr{text-align:center;margin-bottom:14px}
+.cw-title{font-size:26px;font-weight:800;color:#1e40af;margin-bottom:12px;letter-spacing:-.5px}
+.cw-timer{font-size:32px;font-weight:800;color:#2563eb;margin-top:10px;margin-bottom:0;font-variant-numeric:tabular-nums;letter-spacing:2px}
+.cw-diffs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.cw-dbtn{padding:7px 18px;border:2px solid #bfdbfe;border-radius:20px;background:#f0f8ff;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;font-family:inherit}
+.cw-dbtn:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(59,130,246,.15)}
+.cw-body{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.cw-gsec{flex:0 0 auto;background:#f7fbff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(59,130,246,.08)}
+.cw-grid{display:inline-grid;gap:2px;background:#93c5fd;padding:2px;border-radius:4px;outline:none}
+.cw-cell{position:relative;cursor:pointer;user-select:none;transition:background .12s}
+.cw-ci{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fff;font-weight:700;color:#1e3a5f;transition:all .12s}
+.cw-cn{position:absolute;top:1px;left:2px;font-weight:600;color:#7ba7cc;line-height:1;z-index:1;pointer-events:none}
+.cw-cell.hl .cw-ci{background:#dbeafe}
+.cw-cell.act .cw-ci{background:#60a5fa;color:#fff;box-shadow:inset 0 0 0 2px #2563eb}
+.cw-cell.rev .cw-ci{color:#2563eb;background:#eff6ff}
+.cw-cell.rok .cw-ci{background:#d1fae5;color:#059669}
+.cw-cell.rerr .cw-ci{background:#fee2e2;color:#dc2626}
+.cw-cell.blk{background:#bdd5ea}
+.cw-bar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.cw-btn{padding:9px 18px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.cw-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 3px 10px rgba(59,130,246,.18)}
+.cw-btn:disabled{opacity:.35;cursor:not-allowed}
+.cw-bc{background:#3b82f6;color:#fff}
+.cw-bh{background:#7dd3fc;color:#0c4a6e}
+.cw-bk{background:#0ea5e9;color:#fff}
+.cw-bn{background:#93c5fd;color:#1e3a5f}
+.cw-info{display:flex;gap:14px;margin-top:10px;font-size:12px;color:#5b8db8;justify-content:center;flex-wrap:wrap}
+.cw-csec{flex:1;min-width:260px;background:#f7fbff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(59,130,246,.08)}
+.cw-ch{font-size:16px;font-weight:700;color:#1e40af;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #bfdbfe}
+.cw-cl{margin-bottom:14px;column-count:2;column-gap:16px}
+.cw-cg{margin-bottom:6px;break-inside:avoid}
+.cw-cgt{font-size:10px;font-weight:700;color:#7ba7cc;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
+.cw-ct{font-size:13px;color:#334155;line-height:1.5}
+.cw-cl-item.act .cw-ct{color:#2563eb;font-weight:600}
+.cw-wlen{color:#94a3b8;font-size:11px}
+.cw-win{position:fixed;inset:0;background:rgba(30,64,175,.4);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fi .3s}
+.cw-wbox{background:#fff;border-radius:20px;padding:36px 44px;text-align:center;animation:si .3s;box-shadow:0 20px 60px rgba(30,64,175,.25)}
+.cw-wemo{font-size:52px;margin-bottom:8px}
+.cw-wt{font-size:22px;font-weight:800;color:#2563eb;margin-bottom:6px}
+.cw-ws{font-size:13px;color:#5b8db8;margin-bottom:18px}
+.cw-wbtn{padding:11px 30px;background:#3b82f6;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.cw-wbtn:hover{background:#2563eb}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes si{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+@media(max-width:768px){.cw-body{flex-direction:column}.cw-csec{max-height:none}.cw-grid{overflow-x:auto}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ==================== CONFIG ==================== */
+const DIFFICULTIES=[
+  {key:"easy",label:"简单",desc:"3-4字母 · 中文提示",gridSize:12,maxHints:5,color:"#22c55e"},
+  {key:"medium",label:"中等",desc:"4-5字母 · 中文提示",gridSize:15,maxHints:4,color:"#eab308"},
+  {key:"hard",label:"困难",desc:"5-6字母 · English Clues",gridSize:20,maxHints:3,color:"#f97316"},
+  {key:"nightmare",label:"地狱",desc:"7-10字母 · English Clues",gridSize:25,maxHints:2,color:"#ef4444"},
+];
+
+const WORDS={
+  easy:[
+    {w:"CAT",c:"猫",e:"A furry pet"},{w:"DOG",c:"狗",e:"Man's best friend"},
+    {w:"SUN",c:"太阳",e:"Star in the sky"},{w:"RED",c:"红色",e:"Color of blood"},
+    {w:"ICE",c:"冰",e:"Frozen water"},{w:"HAT",c:"帽子",e:"Worn on head"},
+    {w:"CUP",c:"杯子",e:"Used for drinking"},{w:"PEN",c:"钢笔",e:"Used for writing"},
+    {w:"BOX",c:"盒子",e:"A container"},{w:"RUN",c:"跑步",e:"Move fast on foot"},
+    {w:"FLY",c:"飞",e:"Move through air"},{w:"SKY",c:"天空",e:"Above the earth"},
+    {w:"BED",c:"床",e:"You sleep on it"},{w:"BUS",c:"公交车",e:"Public transport"},
+    {w:"FOX",c:"狐狸",e:"A sly animal"},{w:"BAT",c:"蝙蝠",e:"A flying mammal"},
+    {w:"PIG",c:"猪",e:"A farm animal"},{w:"CAR",c:"汽车",e:"Has four wheels"},
+    {w:"MAP",c:"地图",e:"Shows locations"},{w:"KEY",c:"钥匙",e:"Opens a lock"},
+    {w:"FAN",c:"风扇",e:"Blows air"},{w:"MUG",c:"马克杯",e:"A large cup"},
+    {w:"JAM",c:"果酱",e:"Spread on bread"},{w:"NET",c:"网",e:"Used for catching"},
+    {w:"OIL",c:"油",e:"Used for cooking"},{w:"PAN",c:"平底锅",e:"For frying food"},
+    {w:"RUG",c:"地毯",e:"Covers the floor"},{w:"BAG",c:"包",e:"Carries things"},
+    {w:"JAR",c:"罐子",e:"Glass container"},{w:"PIE",c:"派",e:"A baked dessert"},
+    {w:"TEA",c:"茶",e:"A hot drink"},{w:"HEN",c:"母鸡",e:"Lays eggs"},
+    {w:"OWL",c:"猫头鹰",e:"A night bird"},{w:"ANT",c:"蚂蚁",e:"A tiny insect"},
+    {w:"INK",c:"墨水",e:"Used in pens"},{w:"LOG",c:"木头",e:"Part of a tree"},
+    {w:"NUT",c:"坚果",e:"A hard snack"},{w:"VAN",c:"货车",e:"A large vehicle"},
+    {w:"WAX",c:"蜡",e:"Used for candles"},{w:"BOW",c:"弓",e:"Shoots arrows"},
+    {w:"COW",c:"奶牛",e:"Gives milk"},{w:"ELF",c:"精灵",e:"A tiny fairy"},
+    {w:"GUM",c:"口香糖",e:"Chewed not eaten"},{w:"HUG",c:"拥抱",e:"Show affection"},
+    {w:"JOY",c:"快乐",e:"Great happiness"},{w:"KIT",c:"工具包",e:"A set of tools"},
+  ],
+  medium:[
+    {w:"APPLE",c:"苹果",e:"A common fruit"},{w:"LEMON",c:"柠檬",e:"A sour yellow fruit"},
+    {w:"GRAPE",c:"葡萄",e:"Grows in bunches"},{w:"PEACH",c:"桃子",e:"A fuzzy sweet fruit"},
+    {w:"PLUM",c:"李子",e:"A small purple fruit"},{w:"MANGO",c:"芒果",e:"A tropical fruit"},
+    {w:"BERRY",c:"浆果",e:"Small round fruit"},{w:"MELON",c:"瓜",e:"A large round fruit"},
+    {w:"OLIVE",c:"橄榄",e:"Small green or black fruit"},{w:"PEAR",c:"梨",e:"Bell-shaped fruit"},
+    {w:"WATER",c:"水",e:"Essential for life"},{w:"HOUSE",c:"房子",e:"People live in it"},
+    {w:"MUSIC",c:"音乐",e:"Art of sound"},{w:"DANCE",c:"舞蹈",e:"Move to rhythm"},
+    {w:"LIGHT",c:"光",e:"Opposite of dark"},{w:"STONE",c:"石头",e:"A hard rock"},
+    {w:"BREAD",c:"面包",e:"Baked food staple"},{w:"CHESS",c:"国际象棋",e:"A board game"},
+    {w:"DREAM",c:"梦",e:"Images during sleep"},{w:"EARTH",c:"地球",e:"Our planet"},
+    {w:"FLUTE",c:"长笛",e:"A wind instrument"},{w:"GREEN",c:"绿色",e:"Color of grass"},
+    {w:"HORSE",c:"马",e:"You can ride it"},{w:"JUICE",c:"果汁",e:"Fruit drink"},
+    {w:"KNIFE",c:"刀",e:"Used for cutting"},{w:"MOUSE",c:"鼠标",e:"Computer input device"},
+    {w:"PAPER",c:"纸",e:"Write on it"},{w:"QUEEN",c:"女王",e:"A female ruler"},
+    {w:"RIVER",c:"河流",e:"Flowing water"},{w:"SHARK",c:"鲨鱼",e:"Ocean predator"},
+    {w:"TRAIN",c:"火车",e:"Runs on tracks"},{w:"WATCH",c:"手表",e:"Tells time"},
+  ],
+  hard:[
+    {w:"BRIDGE",c:"桥",e:"Structure over water"},{w:"CASTLE",c:"城堡",e:"Medieval fortress"},
+    {w:"DRAGON",c:"龙",e:"Mythical fire creature"},{w:"FLAME",c:"火焰",e:"Part of a fire"},
+    {w:"PLANET",c:"行星",e:"Orbits a star"},{w:"FROZEN",c:"冰冻的",e:"Turned to ice"},
+    {w:"KNIGHT",c:"骑士",e:"Armored warrior"},{w:"THRONE",c:"王座",e:"A king's seat"},
+    {w:"SPHINX",c:"狮身人面像",e:"Egyptian monument"},{w:"GARDEN",c:"花园",e:"Place with flowers"},
+    {w:"ROCKET",c:"火箭",e:"Launches to space"},{w:"SILVER",c:"银",e:"Precious metal"},
+    {w:"TIGER",c:"老虎",e:"Striped big cat"},{w:"FALCON",c:"猎鹰",e:"A fast bird"},
+    {w:"CIRCUS",c:"马戏团",e:"A traveling show"},{w:"DESERT",c:"沙漠",e:"Dry sandy land"},
+    {w:"ISLAND",c:"岛屿",e:"Land in the sea"},{w:"JUNGLE",c:"丛林",e:"Dense tropical forest"},
+    {w:"PIRATE",c:"海盗",e:"Sails and steals"},{w:"PUZZLE",c:"拼图",e:"A brain teaser"},
+    {w:"RIDDLE",c:"谜语",e:"A tricky question"},{w:"TEMPLE",c:"寺庙",e:"A place of worship"},
+    {w:"WIZARD",c:"巫师",e:"A magic user"},{w:"ANCHOR",c:"锚",e:"Keeps ships still"},
+    {w:"CARPET",c:"地毯",e:"Covers the floor"},{w:"FABRIC",c:"织物",e:"Used to make clothes"},
+    {w:"GUITAR",c:"吉他",e:"A string instrument"},{w:"HAMMER",c:"锤子",e:"Used for nails"},
+    {w:"MIRROR",c:"镜子",e:"Shows your reflection"},{w:"PENCIL",c:"铅笔",e:"Writes with graphite"},
+  ],
+  nightmare:[
+    {w:"ALGORITHM",c:"算法",e:"Step-by-step procedure"},{w:"PHILOSOPHY",c:"哲学",e:"Study of fundamental questions"},
+    {w:"SANCTUARY",c:"圣所",e:"A sacred place"},{w:"LABYRINTH",c:"迷宫",e:"Complex maze structure"},
+    {w:"METAPHOR",c:"隐喻",e:"Figure of speech"},{w:"PARADOX",c:"悖论",e:"Self-contradictory statement"},
+    {w:"SYMPHONY",c:"交响乐",e:"Orchestral composition"},{w:"CHAMELEON",c:"变色龙",e:"Color-changing reptile"},
+    {w:"DINOSAUR",c:"恐龙",e:"Prehistoric reptile"},{w:"ELEPHANT",c:"大象",e:"Largest land animal"},
+    {w:"FIREWORK",c:"烟花",e:"Explodes in the sky"},{w:"HURRICANE",c:"飓风",e:"A violent storm"},
+    {w:"KANGAROO",c:"袋鼠",e:"Australian hopper"},{w:"MANDARIN",c:"普通话",e:"Chinese language"},
+    {w:"NOTEBOOK",c:"笔记本",e:"For writing notes"},{w:"UMBRELLA",c:"雨伞",e:"Shields from rain"},
+    {w:"VOLCANO",c:"火山",e:"Erupts with lava"},{w:"ZEPPELIN",c:"飞艇",e:"A large airship"},
+    {w:"CHOCOLATE",c:"巧克力",e:"Sweet brown treat"},{w:"CROCODILE",c:"鳄鱼",e:"River reptile"},
+    {w:"DANGEROUS",c:"危险的",e:"Not safe at all"},{w:"EXPLORER",c:"探险家",e:"Discovers new places"},
+    {w:"JELLYFISH",c:"水母",e:"A stinging sea creature"},{w:"MOSQUITO",c:"蚊子",e:"Bites and buzzes"},
+    {w:"PLATYPUS",c:"鸭嘴兽",e:"Egg-laying mammal"},{w:"SCORPION",c:"蝎子",e:"Has a stinging tail"},
+    {w:"TORTOISE",c:"陆龟",e:"A slow shelled reptile"},{w:"UNICORN",c:"独角兽",e:"Mythical horned horse"},
+  ],
+};
+
+/* ==================== CROSSWORD GENERATOR ==================== */
+function genCrossword(words,gs){
+  const ws=words.map(x=>({...x}));
+  ws.sort((a,b)=>b.w.length-a.w.length);
+  const grid=Array.from({length:gs},()=>Array(gs).fill(null));
+  const placed=[];
+  const first=ws[0];
+  const sc=Math.floor((gs-first.w.length)/2);
+  const sr=Math.floor(gs/2);
+  for(let i=0;i<first.w.length;i++) grid[sr][sc+i]=first.w[i];
+  placed.push({w:first.w,clue:first.c,e:first.e,r:sr,c:sc,dir:"across"});
+  for(let wi=1;wi<ws.length;wi++){
+    const word=ws[wi];const wl=word.w.length;let best=null;
+    for(const pw of placed){
+      if(best)break;
+      for(let pi=0;pi<pw.w.length;pi++){
+        if(best)break;
+        for(let wi2=0;wi2<wl;wi2++){
+          if(best)break;
+          if(pw.w[pi]!==word.w[wi2])continue;
+          let r,c,dir;
+          if(pw.dir==="across"){dir="down";r=pw.r-wi2;c=pw.c+pi;}
+          else{dir="across";r=pw.r+pi;c=pw.c-wi2;}
+          if(dir==="across"&&(c<0||c+wl>gs))continue;
+          if(dir==="down"&&(r<0||r+wl>gs))continue;
+          let ok=true;
+          for(let i=0;i<wl;i++){
+            const cr=dir==="across"?r:r+i;
+            const cc=dir==="across"?c+i:c;
+            const isInt=(cr===pw.r&&cc===pw.c+pi)||(cr===pw.r+pi&&cc===pw.c);
+            if(grid[cr][cc]!==null&&!isInt&&grid[cr][cc]!==word.w[i]){ok=false;break;}
+          }
+          if(!ok)continue;
+          let adjOk=true;
+          for(let i=0;i<wl&&adjOk;i++){
+            const cr=dir==="across"?r:r+i;
+            const cc=dir==="across"?c+i:c;
+            const isInt=(cr===pw.r&&cc===pw.c+pi)||(cr===pw.r+pi&&cc===pw.c);
+            if(dir==="across"){
+              if(cr>0&&grid[cr-1][cc]!==null&&!isInt)adjOk=false;
+              if(cr<gs-1&&grid[cr+1][cc]!==null&&!isInt)adjOk=false;
+            }else{
+              if(cc>0&&grid[cr][cc-1]!==null&&!isInt)adjOk=false;
+              if(cc<gs-1&&grid[cr][cc+1]!==null&&!isInt)adjOk=false;
+            }
+          }
+          if(adjOk&&dir==="across"){
+            if(c>0&&grid[r][c-1]!==null)adjOk=false;
+            if(c+wl<gs&&grid[r][c+wl]!==null)adjOk=false;
+          }
+          if(adjOk&&dir==="down"){
+            if(r>0&&grid[r-1][c]!==null)adjOk=false;
+            if(r+wl<gs&&grid[r+wl][c]!==null)adjOk=false;
+          }
+          if(adjOk)best={word,r,c,dir};
+        }
+      }
+    }
+    if(best){
+      for(let i=0;i<wl;i++){
+        const cr=best.dir==="across"?best.r:best.r+i;
+        const cc=best.dir==="across"?best.c+i:best.c;
+        grid[cr][cc]=best.word.w[i];
+      }
+      placed.push({w:best.word.w,clue:best.word.c,e:best.word.e,r:best.r,c:best.c,dir:best.dir});
+    }
+  }
+  return{grid,placed};
+}
+
+function computeNums(placed){
+  const nums={};let n=1;
+  const starts=placed.map(p=>({r:p.r,c:p.c})).sort((a,b)=>a.r-b.r||a.c-b.c);
+  const seen=new Set();
+  for(const s of starts){
+    const k=s.r+","+s.c;
+    if(!seen.has(k)){seen.add(k);nums[k]=n++;}
+  }
+  return nums;
+}
+
+function makePuzzle(diff){
+  const cfg=DIFFICULTIES.find(d=>d.key===diff);
+  const gs=cfg.gridSize;
+  const words=WORDS[diff].map(x=>({...x}));
+  let best=null;
+  for(let a=0;a<500;a++){
+    const sh=[...words].sort(()=>Math.random()-0.5);
+    const res=genCrossword(sh,gs);
+    if(!best||res.placed.length>best.placed.length){best=res;if(res.placed.length>=words.length)break;}
+  }
+  let minR=gs,maxR=0,minC=gs,maxC=0;
+  for(let r=0;r<gs;r++)for(let c=0;c<gs;c++)
+    if(best.grid[r][c]!==null){minR=Math.min(minR,r);maxR=Math.max(maxR,r);minC=Math.min(minC,c);maxC=Math.max(maxC,c);}
+  const tg=[];
+  for(let r=minR;r<=maxR;r++)tg.push(best.grid[r].slice(minC,maxC+1));
+  const pw=best.placed.map(p=>({...p,r:p.r-minR,c:p.c-minC}));
+  const rows=tg.length,cols=tg[0].length;
+  const nums=computeNums(pw);
+  const pw2=pw.map(p=>({...p,num:nums[p.r+","+p.c]}));
+  const ac=pw2.filter(p=>p.dir==="across").sort((a,b)=>a.r-b.r||a.c-b.c);
+  const dn=pw2.filter(p=>p.dir==="down").sort((a,b)=>a.r-b.r||a.c-b.c);
+  return{grid:tg,words:pw2,across:ac,down:dn,nums,rows,cols};
+}
+
+/* ==================== HELPERS ==================== */
+function isLetter(grid,r,c){return r>=0&&r<grid.length&&c>=0&&c<grid[0].length&&grid[r][c]!==null;}
+
+function getWordCells(word){
+  const cells=[];
+  for(let i=0;i<word.w.length;i++)
+    cells.push({r:word.r+(word.dir==="down"?i:0),c:word.c+(word.dir==="across"?i:0)});
+  return cells;
+}
+
+function getCurrentWord(puzzle,cell,dir){
+  if(!cell)return null;
+  const list=dir==="across"?puzzle.across:puzzle.down;
+  return list.find(w=>{
+    const cells=getWordCells(w);
+    return cells.some(c=>c.r===cell.r&&c.c===cell.c);
+  });
+}
+
+function cellInWord(cell,w){
+  for(let i=0;i<w.w.length;i++){
+    const r=w.r+(w.dir==="down"?i:0);
+    const c=w.c+(w.dir==="across"?i:0);
+    if(r===cell.r&&c===cell.c)return true;
+  }
+  return false;
+}
+
+/* ==================== GAME ENGINE ==================== */
+let state={
+  diff:"easy",puzzle:null,ans:null,revealed:null,result:null,
+  active:null,dir:"across",hints:0,wrong:0,won:false,
+  timer:0
+};
+let timerInterval=null;
+
+function formatTime(s){
+  const m=Math.floor(s/60);
+  const sec=s%60;
+  return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+}
+
+function getDC(diff){return DIFFICULTIES.find(d=>d.key===diff);}
+
+function startGame(d){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+  const p=makePuzzle(d);
+  state.diff=d;
+  state.puzzle=p;
+  state.ans=Array.from({length:p.rows},()=>Array(p.cols).fill(""));
+  state.revealed=Array.from({length:p.rows},()=>Array(p.cols).fill(false));
+  state.result=Array.from({length:p.rows},()=>Array(p.cols).fill(null));
+  state.active=null;state.dir="across";state.hints=0;state.wrong=0;state.won=false;
+  state.timer=0;
+  timerInterval=setInterval(()=>{if(!state.won){state.timer++;updateTimer();}},1000);
+  render();
+}
+
+function clearResults(){
+  state.result=Array.from({length:state.puzzle.rows},()=>Array(state.puzzle.cols).fill(null));
+}
+
+function navNext(){
+  if(!state.active)return;
+  const p=state.puzzle;
+  const dr=state.dir==="down"?1:0;
+  const dc=state.dir==="across"?1:0;
+  let r=state.active.r+dr,c=state.active.c+dc;
+  while(isLetter(p.grid,r,c)&&state.ans[r][c]){r+=dr;c+=dc;}
+  if(isLetter(p.grid,r,c))state.active={r,c};
+}
+
+function navPrev(){
+  if(!state.active)return;
+  const p=state.puzzle;
+  const dr=state.dir==="down"?-1:0;
+  const dc=state.dir==="across"?-1:0;
+  const r=state.active.r+dr,c=state.active.c+dc;
+  if(isLetter(p.grid,r,c))state.active={r,c};
+}
+
+function getNextWord(){
+  const p=state.puzzle;
+  const list=state.dir==="across"?p.across:p.down;
+  for(const w of list){
+    const cells=getWordCells(w);
+    let hasEmpty=false,allFilled=true;
+    for(const cell of cells){
+      if(!state.ans[cell.r][cell.c]){hasEmpty=true;allFilled=false;break;}
+    }
+    if(hasEmpty)return cells.find(cell=>!state.ans[cell.r][cell.c]);
+  }
+  return null;
+}
+
+function clickCell(r,c){
+  const p=state.puzzle;
+  if(!isLetter(p.grid,r,c)||state.won)return;
+  if(state.active&&state.active.r===r&&state.active.c===c){
+    const ca=p.across.some(w=>cellInWord({r,c},w));
+    const cd=p.down.some(w=>cellInWord({r,c},w));
+    if(ca&&cd)state.dir=state.dir==="across"?"down":"across";
+  }else{
+    state.active={r,c};
+    const ca=p.across.some(w=>cellInWord({r,c},w));
+    const cd=p.down.some(w=>cellInWord({r,c},w));
+    if(!ca&&state.dir==="across")state.dir="down";
+    if(!cd&&state.dir==="down")state.dir="across";
+  }
+  clearResults();
+  render();
+  document.getElementById("cw-grid").focus();
+}
+
+function handleKey(e){
+  if(!state.active||state.won||!state.puzzle)return;
+  const ch=e.key.toUpperCase();
+  const p=state.puzzle;
+  if(/^[A-Z]$/.test(ch)){
+    e.preventDefault();
+    state.ans[state.active.r][state.active.c]=ch;
+    clearResults();
+    const prev={r:state.active.r,c:state.active.c};
+    navNext();
+    if(state.active.r===prev.r&&state.active.c===prev.c){
+      const nw=getNextWord();
+      if(nw)state.active=nw;
+    }
+    render();
+  }else if(e.key==="Backspace"){
+    e.preventDefault();
+    if(state.ans[state.active.r][state.active.c]){
+      state.ans[state.active.r][state.active.c]="";
+    }else{
+      navPrev();
+      if(state.active)state.ans[state.active.r][state.active.c]="";
+    }
+    render();
+  }else if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){
+    e.preventDefault();
+    const d=e.key==="ArrowUp"||e.key==="ArrowDown"?"down":"across";
+    state.dir=d;
+    const dr2=e.key==="ArrowDown"?1:e.key==="ArrowUp"?-1:0;
+    const dc2=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;
+    const nr=state.active.r+dr2,nc=state.active.c+dc2;
+    if(isLetter(p.grid,nr,nc))state.active={r:nr,c:nc};
+    render();
+  }else if(e.key==="Tab"){
+    e.preventDefault();
+    state.dir=state.dir==="across"?"down":"across";
+    render();
+  }
+}
+
+function doCheck(){
+  if(!state.puzzle||state.won)return;
+  const p=state.puzzle;
+  const res=Array.from({length:p.rows},()=>Array(p.cols).fill(null));
+  let allOk=true,allFilled=true;
+  for(let r=0;r<p.rows;r++)for(let c=0;c<p.cols;c++)
+    if(p.grid[r][c]!==null){
+      if(!state.ans[r][c])allFilled=false;
+      else if(state.ans[r][c]===p.grid[r][c])res[r][c]="ok";
+      else{res[r][c]="err";allOk=false;}
+    }
+  state.result=res;
+  if(allOk&&allFilled)state.won=true;
+  else if(!allOk)state.wrong++;
+  render();
+}
+
+function doHint(){
+  const dc=getDC(state.diff);
+  if(!state.puzzle||state.won||state.hints>=dc.maxHints)return;
+  const p=state.puzzle;
+  for(let r=0;r<p.rows;r++)for(let c=0;c<p.cols;c++)
+    if(p.grid[r][c]!==null&&!state.revealed[r][c]&&state.ans[r][c]!==p.grid[r][c]){
+      state.ans[r][c]=p.grid[r][c];
+      state.revealed[r][c]=true;
+      state.hints++;
+      state.active={r,c};
+      let done=true;
+      for(let r2=0;r2<p.rows;r2++)for(let c2=0;c2<p.cols;c2++)
+        if(p.grid[r2][c2]!==null&&state.ans[r2][c2]!==p.grid[r2][c2])done=false;
+      if(done)state.won=true;
+      render();return;
+    }
+}
+
+function doConfirm(){
+  if(!state.puzzle||state.won)return;
+  const p=state.puzzle;
+  let allOk=true;
+  for(let r=0;r<p.rows;r++)for(let c=0;c<p.cols;c++)
+    if(p.grid[r][c]!==null&&state.ans[r][c]!==p.grid[r][c])allOk=false;
+  if(allOk){state.won=true;render();}
+  else{doCheck();state.wrong++;render();}
+}
+
+/* ==================== RENDER ==================== */
+function updateTimer(){
+  const el=document.getElementById("cw-timer");
+  if(el)el.textContent=formatTime(state.timer);
+}
+
+function render(){
+  const p=state.puzzle;
+  const dc=getDC(state.diff);
+  const curWord=getCurrentWord(p,state.active,state.dir);
+  const curCells=curWord?getWordCells(curWord):[];
+  const cellSz=Math.max(28,Math.min(50,Math.floor(580/Math.max(p.rows,p.cols))));
+  const numFs=Math.max(7,cellSz*0.2);
+  const letFs=Math.max(14,cellSz*0.44);
+
+  function isCur(r,c){return curCells.some(cl=>cl.r===r&&cl.c===c);}
+
+  function clueText(w){
+    if(state.diff==="hard"||state.diff==="nightmare")return w.e;
+    return w.clue;
+  }
+
+  let gridHTML="";
+  for(let r=0;r<p.rows;r++){
+    for(let c=0;c<p.cols;c++){
+      const isL=p.grid[r][c]!==null;
+      if(!isL){gridHTML+='<div class="cw-cell blk" style="width:'+cellSz+'px;height:'+cellSz+'px"></div>';continue;}
+      const k=r+","+c;
+      const num=p.nums[k];
+      const ia=state.active&&state.active.r===r&&state.active.c===c;
+      const ih=isCur(r,c);
+      const ir=state.revealed[r][c];
+      const rs=state.result[r][c];
+      let cls="cw-cell";
+      if(ia)cls+=" act";else if(ih)cls+=" hl";
+      if(ir)cls+=" rev";
+      if(rs==="ok")cls+=" rok";
+      if(rs==="err")cls+=" rerr";
+      gridHTML+='<div class="'+cls+'" style="width:'+cellSz+'px;height:'+cellSz+'px" onclick="clickCell('+r+','+c+')"><div class="cw-ci" style="font-size:'+letFs+'px">';
+      if(num)gridHTML+='<span class="cw-cn" style="font-size:'+numFs+'px">'+num+'</span>';
+      gridHTML+=(state.ans[r][c]||"")+'</div></div>';
+    }
+  }
+
+  let acrossHTML="";
+  p.across.forEach((w,i)=>{
+    const isActive=curWord===w;
+    acrossHTML+='<div class="cw-cg cw-cl-item'+(isActive?" act":"")+'"><div class="cw-cgt">'+w.num+'. '+w.w.length+' letters</div><div class="cw-ct">'+clueText(w)+'</div></div>';
+  });
+
+  let downHTML="";
+  p.down.forEach((w,i)=>{
+    const isActive=curWord===w;
+    downHTML+='<div class="cw-cg cw-cl-item'+(isActive?" act":"")+'"><div class="cw-cgt">'+w.num+'. '+w.w.length+' letters</div><div class="cw-ct">'+clueText(w)+'</div></div>';
+  });
+
+  let diffsHTML="";
+  DIFFICULTIES.forEach(d=>{
+    const sel=state.diff===d.key;
+    diffsHTML+='<button class="cw-dbtn" style="border-color:'+(sel?d.color:"#e2e8f0")+';color:'+(sel?d.color:"#64748b")+';background:'+(sel?d.color+"14":"#fff")+'" onclick="setDiff(\''+d.key+'\')">'+d.label+'</button>';
+  });
+
+  const hintsLeft=dc.maxHints-state.hints;
+
+  let winHTML="";
+  if(state.won){
+    if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+    winHTML='<div class="cw-win" onclick="closeWin()"><div class="cw-wbox" onclick="event.stopPropagation()"><div class="cw-wemo">&#127881;</div><div class="cw-wt">Congratulations!</div><div class="cw-ws">Time: '+formatTime(state.timer)+' &middot; Hints: '+state.hints+' &middot; Wrong: '+state.wrong+'</div><button class="cw-wbtn" onclick="newGame()">Play Again</button></div></div>';
+  }
+
+  document.getElementById("app").innerHTML=
+    '<div class="cw-wrap">'+
+    '<div class="cw-hdr"><div class="cw-title">Crossword Puzzle - 英语填词游戏</div>'+
+    '<div class="cw-diffs">'+diffsHTML+'</div>'+
+    '<div id="cw-timer" class="cw-timer">'+formatTime(state.timer)+'</div></div>'+
+    '<div class="cw-body" style="'+(state.diff==='nightmare'?'gap:10px;':'')+'">'+
+      '<div class="cw-gsec" style="'+(state.diff==='nightmare'?'padding:12px;margin-left:-10px;':'')+'">'+
+        '<div id="cw-grid" class="cw-grid" tabindex="0" style="display:inline-grid;grid-template-columns:repeat('+p.cols+','+cellSz+'px);grid-template-rows:repeat('+p.rows+','+cellSz+'px)">'+gridHTML+'</div>'+
+        '<div class="cw-bar">'+
+          '<button class="cw-btn cw-bc" onclick="doCheck()"'+(state.won?" disabled":"")+'>Check</button>'+
+          '<button class="cw-btn cw-bh" onclick="doHint()"'+(state.won||state.hints>=dc.maxHints?" disabled":"")+'>Hint ('+hintsLeft+')</button>'+
+          '<button class="cw-btn cw-bk" onclick="doConfirm()"'+(state.won?" disabled":"")+'>Confirm</button>'+
+          '<button class="cw-btn cw-bn" onclick="newGame()">New Game</button>'+
+        '</div>'+
+        '<div class="cw-info"><span>Words: '+p.words.length+'</span><span>Hints: '+state.hints+'/'+dc.maxHints+'</span><span>Wrong: '+state.wrong+'</span><span>'+(state.dir==="across"?"Across ↓":"Down →")+'</span></div>'+
+      '</div>'+
+      '<div class="cw-csec" style="'+(state.diff==='nightmare'?'min-width:420px;flex:1.6;':'')+'">'+
+        '<div class="cw-ch">Clues - 题目</div>'+
+        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:1;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;'+(state.diff==='nightmare'?'':'column-span:all')+'">ACROSS - 横向</div>'+acrossHTML+'</div>'+
+        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:1;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;'+(state.diff==='nightmare'?'':'column-span:all')+'">DOWN - 纵向</div>'+downHTML+'</div>'+
+      '</div>'+
+    '</div>'+winHTML+'</div>';
+
+  // Re-attach keydown listener
+  const gridEl=document.getElementById("cw-grid");
+  if(gridEl){gridEl.addEventListener("keydown",handleKey);gridEl.focus();}
+}
+
+function setDiff(d){state.diff=d;startGame(d);}
+function newGame(){startGame(state.diff);}
+function closeWin(){state.won=false;render();}
+
+// Boot
+startGame("easy");
+</script>
+</body>
+</html>
