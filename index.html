@@ -8,7 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#e8f4fd;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
-.cw-wrap{max-width:1100px;margin:0 auto;padding:16px}
+.cw-wrap{max-width:1260px;margin:0 auto;padding:16px}
 .cw-hdr{text-align:center;margin-bottom:14px}
 .cw-title{font-size:26px;font-weight:800;color:#1e40af;margin-bottom:12px;letter-spacing:-.5px}
 .cw-timer{font-size:32px;font-weight:800;color:#2563eb;margin-top:10px;margin-bottom:0;font-variant-numeric:tabular-nums;letter-spacing:2px}
@@ -461,7 +461,7 @@ function render(){
   const dc=getDC(state.diff);
   const curWord=getCurrentWord(p,state.active,state.dir);
   const curCells=curWord?getWordCells(curWord):[];
-  const gridBase=state.diff==='nightmare'?420:580;
+  const gridBase=state.diff==='nightmare'?340:580;
   const cellSz=Math.max(28,Math.min(50,Math.floor(gridBase/Math.max(p.rows,p.cols))));
   const numFs=Math.max(7,cellSz*0.2);
   const letFs=Math.max(14,cellSz*0.44);
@@ -537,10 +537,10 @@ function render(){
         '</div>'+
         '<div class="cw-info"><span>Words: '+p.words.length+'</span><span>Hints: '+state.hints+'/'+dc.maxHints+'</span><span>Wrong: '+state.wrong+'</span><span>'+(state.dir==="across"?"Across ↓":"Down →")+'</span></div>'+
       '</div>'+
-      '<div class="cw-csec" style="'+(state.diff==='nightmare'?'min-width:0;flex:1;':'')+'">'+
+      '<div class="cw-csec" style="'+(state.diff==='nightmare'?'min-width:520px;flex:1;':'')+'">'+
         '<div class="cw-ch">Clues - 题目</div>'+
-        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:2;column-gap:16px;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;column-span:all">ACROSS - 横向</div>'+acrossHTML+'</div>'+
-        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:2;column-gap:16px;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;column-span:all">DOWN - 纵向</div>'+downHTML+'</div>'+
+        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:2;column-gap:24px;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;column-span:all">ACROSS - 横向</div>'+acrossHTML+'</div>'+
+        '<div class="cw-cl" style="'+(state.diff==='nightmare'?'column-count:2;column-gap:24px;':'')+'"><div class="cw-cg" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:4px;column-span:all">DOWN - 纵向</div>'+downHTML+'</div>'+
       '</div>'+
     '</div>'+winHTML+'</div>';
 
